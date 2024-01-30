@@ -1,0 +1,17 @@
+{
+    "name": "pihedy/rc-network-php-client",
+    "description": "The client that controls the RC devices.",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/app/"
+        }
+    },
+    "config": {
+        "vendor-dir": "src/vendor"
+    },
+    "require": {
+        "php": ">=8.1.0",
+        "react/datagram": "^1.9"
+    }
+}
