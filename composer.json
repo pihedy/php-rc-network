@@ -3,8 +3,11 @@
     "description": "The client that controls the RC devices.",
     "type": "project",
     "autoload": {
+        "files": [
+            "src/helper.php"
+        ],
         "psr-4": {
-            "App\\": "src/app/"
+            "RcNetwork\\": "src/app/"
         }
     },
     "config": {
@@ -12,6 +15,7 @@
     },
     "require": {
         "php": ">=8.1.0",
-        "react/datagram": "^1.9"
+        "react/datagram": "^1.9",
+        "psr/container": "^2.0"
     }
 }

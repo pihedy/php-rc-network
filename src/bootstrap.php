@@ -19,12 +19,7 @@ if (!file_exists(VENDOR_DIR . DIRECTORY_SEPARATOR . 'autoload.php')) {
  */
 include VENDOR_DIR . DIRECTORY_SEPARATOR . 'autoload.php';
 
-/* $Factory = new \React\Datagram\Factory();
-
-$Factory->createClient('127.0.0.1:59649')->then(function (\React\Datagram\Socket $Client) {
-    $Client->send(json_encode(['message' => 'Hello World!']));
-
-    $Client->on('message', function (string $message, string $remoteAddress, \React\Datagram\Socket $Socket) {
-        echo "Received message from {$remoteAddress}: {$message}" . PHP_EOL;
-    });
-}); */
+/**
+ * Runs the RcNetworkApp application.
+ */
+RcNetworkApp()->run();
