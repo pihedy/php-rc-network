@@ -15,7 +15,7 @@ interface InputInterface
      *
      * @param string $name The argument name
      *
-     * @return string|null The argument value or null if it doesn't exist
+     * @return null|string The argument value or null if it doesn't exist
      */
     public function getArgument(string $name);
 
@@ -31,7 +31,7 @@ interface InputInterface
      *
      * @param string $name The option name
      *
-     * @return string|null The option value or null if it doesn't exist
+     * @return null|string The option value or null if it doesn't exist
      */
     public function getOption(string $name);
 
