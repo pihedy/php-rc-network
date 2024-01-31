@@ -4,7 +4,7 @@
     "type": "project",
     "autoload": {
         "files": [
-            "src/helper.php"
+            "src/app/helper.php"
         ],
         "psr-4": {
             "RcNetwork\\": "src/app/"

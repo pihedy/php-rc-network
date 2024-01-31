@@ -57,4 +57,18 @@ class Container implements ContainerInterface
     {
         $this->services[$id] = $service;
     }
+
+    /**
+     * Removes a service from the container.
+     *
+     * @param string $id The ID of the service to remove.
+     */
+    public function remove(string $id): void
+    {
+        if (!$this->has($id)) {
+            return;
+        }
+
+        unset($this->services[$id]);
+    }
 }
