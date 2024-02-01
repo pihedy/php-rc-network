@@ -2,6 +2,8 @@
 
 namespace RcNetwork;
 
+use \Symfony\Component\Console\Application;
+
 /**
  * The App class is a singleton that extends Container and provides application initialization and running logic.
  * 
@@ -36,6 +38,6 @@ final class App extends Container
 
     public function run(): void
     {
-        /* TODO: Add app initialization and run logic here */
+        (new Application())->run();
     }
 }
