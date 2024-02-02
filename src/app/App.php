@@ -2,6 +2,10 @@
 
 namespace RcNetwork;
 
+use \RcNetwork\Component\Config\PhpFileLoader;
+use \RcNetwork\Interface\ProviderInterface;
+
+use \Symfony\Component\Config\FileLocator;
 use \Symfony\Component\Console\Application;
 
 /**
@@ -23,6 +27,13 @@ final class App extends Container
     private static ?self $Instance = null;
 
     /**
+     * An array to hold ProviderInterface instances.
+     * 
+     * @var \RcNetwork\Interface\ProviderInterface[] An array to hold ProviderInterface instances.
+     */
+    private array $providers = [];
+
+    /**
      * Gets the singleton instance of the App class.
      *
      * @return self Returns the singleton instance of the App class.
@@ -36,8 +47,55 @@ final class App extends Container
         return self::$Instance;
     }
 
+    private function bootstrapConfig(): void
+    {
+        $this->set('config', function () {
+            $DirectoryIterator  = new \DirectoryIterator(MAIN_DIR . DIRECTORY_SEPARATOR . 'config');
+            $content            = [];
+
+            foreach ($DirectoryIterator as $Element) {
+                if ($Element->isDot() || $Element->isDir()) {
+                    continue;
+                }
+
+                if ($Element->getExtension() != 'php') {
+                    continue;
+                }
+
+                $key            = $Element->getBasename('.php');
+                $content[$key]  = include $Element->getPathname();
+            }
+
+            return new Container($content);
+        });
+    }
+
+    public function addProvider(ProviderInterface $Provider): void
+    {
+        $this->providers[] = $Provider;
+    }
+
+    public function addProviders(array $providers): void
+    {
+        $this->providers = array_merge($this->providers, $providers);
+    }
+
     public function run(): void
     {
+        $this->bootstrapConfig();
+        $this->registerProviders();
+
         (new Application())->run();
+    }
+
+    private function registerProviders(): void
+    {
+        foreach ($this->providers as $Provider) {
+            if (!$Provider instanceof ProviderInterface) {
+                continue;
+            }
+
+            $Provider->register($this);
+        }
     }
 }
