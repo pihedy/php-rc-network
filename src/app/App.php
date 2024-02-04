@@ -12,7 +12,8 @@ use \Symfony\Component\Console\Application;
  * and a public static method getInstance() to retrieve the instance. 
  * The run() method contains the application initialization and running logic.
  * 
- * @property \RcNetwork\Component\Config\PhpFileConfig $config The configuration container.
+ * @property \RcNetwork\Component\Config\PhpFileConfig  $config     The configuration container.
+ * @property \Symfony\Component\Console\Application     $console    The console application.
  * 
  * @author Pihe Edmond <pihedy@gmail.com>
  */
@@ -28,6 +29,7 @@ final class App extends Container
      */
     private array $core = [
         \RcNetwork\Provider\ConfigProvider::class,
+        \RcNetwork\Provider\ConsoleProvider::class,
     ];
 
     /**
@@ -76,10 +78,7 @@ final class App extends Container
         $this->bootstrap();
         $this->registerProviders();
 
-        (new Application(
-            $this->config->get('default.name'),
-            $this->config->get('default.version')
-        ))->run();
+        $this->console->run();
     }
 
     /**
