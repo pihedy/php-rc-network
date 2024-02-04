@@ -2,10 +2,7 @@
 
 namespace RcNetwork;
 
-use \RcNetwork\Component\Config\PhpFileLoader;
 use \RcNetwork\Interface\ProviderInterface;
-
-use \Symfony\Component\Config\FileLocator;
 use \Symfony\Component\Console\Application;
 
 /**
@@ -15,23 +12,39 @@ use \Symfony\Component\Console\Application;
  * and a public static method getInstance() to retrieve the instance. 
  * The run() method contains the application initialization and running logic.
  * 
+ * @property \RcNetwork\Component\Config\PhpFileConfig $config The configuration container.
+ * 
  * @author Pihe Edmond <pihedy@gmail.com>
  */
 final class App extends Container
 {
     /**
-     * The singleton instance of the App class.
-     * 
      * @var null|self The singleton instance of the App class.
      */
     private static ?self $Instance = null;
 
     /**
-     * An array to hold ProviderInterface instances.
-     * 
-     * @var \RcNetwork\Interface\ProviderInterface[] An array to hold ProviderInterface instances.
+     * @var array The core providers to bootstrap the application.
      */
-    private array $providers = [];
+    private array $core = [
+        \RcNetwork\Provider\ConfigProvider::class,
+    ];
+
+    /**
+     * Magic getter to retrieve values from the container.
+     *
+     * @param string $name The name of the value to retrieve.
+     * 
+     * @return mixed The value if found, null otherwise.
+     */
+    public function __get(string $name)
+    {
+        if (!$this->has($name)) {
+            return null;
+        }
+
+        return $this->get($name);
+    }
 
     /**
      * Gets the singleton instance of the App class.
@@ -47,50 +60,42 @@ final class App extends Container
         return self::$Instance;
     }
 
-    private function bootstrapConfig(): void
+    /**
+     * Bootstraps the application by registering the core providers.
+     */
+    private function bootstrap(): void
     {
-        $this->set('config', function () {
-            $DirectoryIterator  = new \DirectoryIterator(MAIN_DIR . DIRECTORY_SEPARATOR . 'config');
-            $content            = [];
-
-            foreach ($DirectoryIterator as $Element) {
-                if ($Element->isDot() || $Element->isDir()) {
-                    continue;
-                }
-
-                if ($Element->getExtension() != 'php') {
-                    continue;
-                }
-
-                $key            = $Element->getBasename('.php');
-                $content[$key]  = include $Element->getPathname();
-            }
-
-            return new Container($content);
-        });
+        $this->registerProviders($this->core);
     }
 
-    public function addProvider(ProviderInterface $Provider): void
-    {
-        $this->providers[] = $Provider;
-    }
-
-    public function addProviders(array $providers): void
-    {
-        $this->providers = array_merge($this->providers, $providers);
-    }
-
+    /**
+     * Runs the application by bootstrapping, registering providers, and running the application.
+     */
     public function run(): void
     {
-        $this->bootstrapConfig();
+        $this->bootstrap();
         $this->registerProviders();
 
-        (new Application())->run();
+        (new Application(
+            $this->config->get('default.name'),
+            $this->config->get('default.version')
+        ))->run();
     }
 
-    private function registerProviders(): void
+    /**
+     * Registers the given providers or all providers if none provided.
+     *
+     * @param string[] $providers The providers to register.
+     */
+    private function registerProviders(array $providers = []): void
     {
-        foreach ($this->providers as $Provider) {
+        foreach ($providers as $provider) {
+            if (!class_exists($provider)) {
+                continue;
+            }
+
+            $Provider = new $provider();
+
             if (!$Provider instanceof ProviderInterface) {
                 continue;
             }

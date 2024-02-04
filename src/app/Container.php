@@ -15,28 +15,17 @@ class Container implements ContainerInterface
     /**
      * @var array An array to store the services registered in the container.
      */
-    private array $services = [];
+    protected array $services = [];
 
     /**
      * @var string Separator string used to delimit service name segments.
      */
-    private string $separator = '.';
+    protected string $separator = '.';
 
     /**
      * @var array An array to cache the last retrieved service.
      */
-    private array $cache = ['key' => null, 'value' => null];
-
-    /**
-     * Constructor method for the Container class. 
-     * Initializes the services property with the provided array of services.
-     * 
-     * @param array $services Array of services to initialize the container with.
-     */
-    public function __construct(array $services = [])
-    {
-        $this->services = $services;
-    }
+    protected array $cache = ['key' => null, 'value' => null];
 
     /**
      * Gets a service from the container.
