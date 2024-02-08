@@ -5,7 +5,9 @@ namespace RcNetwork\Provider;
 use \RcNetwork\Interface\ProviderInterface;
 
 use \RcNetwork\App;
+
 use \Symfony\Component\Console\Application;
+use \Symfony\Component\Console\Command\Command;
 
 /**
  * ConsoleProvider implements the ProviderInterface.
@@ -24,15 +26,48 @@ class ConsoleProvider implements ProviderInterface
      */
     public function register(App $App): void
     {
-        $App->set('console', function (App $App) {
+        $commands = $this->initCommands();
+
+        $App->set('console', function (App $App) use ($commands) {
             $ConsoleApplication = new Application(
                 $App->config->get('app.name'),
                 $App->config->get('app.version')
             );
 
-            $ConsoleApplication->addCommands($App->config->get('commands.list'));
+            $ConsoleApplication->addCommands($commands);
 
             return $ConsoleApplication;
         });
+    }
+
+    /**
+     * Initializes the console commands.
+     *
+     * Gets the list of command class names from the application config. 
+     * Instantiates each command class and adds it to the commands array.
+     * Validates that each command is an instance of Symfony\Component\Console\Command\Command.
+     *
+     * @return array An array of Symfony\Component\Console\Command\Command instances.
+     */
+    public function initCommands(): array
+    {
+        $commands = RcNetworkApp()->config->get('commands.list');
+
+        foreach ($commands as $commandKey => $command) {
+            /** 
+             * @var Command $Command
+             */
+            $Command = new $command($commandKey);
+
+            if (!$Command instanceof Command) {
+                throw new \Exception(
+                    'Command ' . $commandKey . 'is not a valid command.'
+                );
+            }
+
+            $commands[$commandKey] = $Command;
+        }
+
+        return $commands;
     }
 }

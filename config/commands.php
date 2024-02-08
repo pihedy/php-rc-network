@@ -8,6 +8,6 @@
 
 return [
     'list' => [
-        
+        'test:valami' => \RcNetwork\Command\TestCommand::class
     ]
 ];
