@@ -1,0 +1,7 @@
+<phpunit bootstrap="src/vendor/autoload.php" colors="true">
+    <testsuites>
+        <testsuite name="RC Network Test Suite">
+            <directory>./tests</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

@@ -1,12 +1,12 @@
 <?php declare(strict_types=1);
 
-namespace RcNetwork\Component\Connection;
+namespace RcNetwork\Components\Connection;
 
 use \Ratchet\ {MessageComponentInterface, ConnectionInterface};
 
 use \Symfony\Component\Console\Output\OutputInterface;
 
-use \RcNetwork\Component\Serial\Serial;
+use \RcNetwork\Components\Serial\Serial;
 
 class Server implements MessageComponentInterface
 {

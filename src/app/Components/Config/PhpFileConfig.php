@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace RcNetwork\Component\Config;
+namespace RcNetwork\Components\Config;
 
 use \RcNetwork\Container;
 

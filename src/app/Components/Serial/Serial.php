@@ -1,26 +1,52 @@
 <?php
 
-namespace RcNetwork\Component\Serial;
+namespace RcNetwork\Components\Serial;
 
 define ("SERIAL_DEVICE_NOTSET", 0);
 define ("SERIAL_DEVICE_SET", 1);
 define ("SERIAL_DEVICE_OPENED", 2);
 
-/**
- * Serial port control class
- *
- * THIS PROGRAM COMES WITH ABSOLUTELY NO WARRANTIES !
- * USE IT AT YOUR OWN RISKS !
- *
- * @author Rémy Sanchez <remy.sanchez@hyperthese.net>
- * @author Rizwan Kassim <rizwank@geekymedia.com>
- * @thanks Aurélien Derouineau for finding how to open serial ports with windows
- * @thanks Alec Avedisyan for help and testing with reading
- * @thanks Jim Wright for OSX cleanup/fixes.
- * @copyright under GPL 2 licence
- */
 class Serial
 {
+    /**
+     * The serial device associated with this instance.
+     * 
+     * @var Device
+     */
+    public Device $Device;
+
+    /**
+     * Constant representing the standard input file descriptor.
+     */
+    public const STD_INPUT = 0;
+
+    /**
+     * Constant representing the standard output file descriptor.
+     */
+    public const STD_OUTPUT = 1;
+
+    /**
+     * Constant representing the standard error file descriptor.
+     */
+    public const STD_ERROR = 2;
+
+    /**
+     * An array of file descriptor specifications for the standard input, output, and error streams.
+     * 
+     * @var array
+     */
+    protected static array $descriptors = [
+        self::STD_OUTPUT    => ['pipe', 'w'],
+        self::STD_ERROR     => ['pipe', 'w'],
+    ];
+
+    /**
+     * An array to store answers.
+     * 
+     * @var array
+     */
+    protected array $answers = [];
+
     public $_device = null;
     public $_winDevice = null;
     public $_dHandle = null;
@@ -41,8 +67,10 @@ class Serial
      *
      * @return void
      */
-    public function __construct()
+    public function __construct(protected array $props)
     {
+        $this->bootstrap();
+
         setlocale(LC_ALL, "en_US");
 
         $sysName = php_uname();
@@ -698,10 +726,116 @@ class Serial
         $retVal = proc_close($proc);
 
         if (func_num_args() == 2) $out = array($ret, $err);
+        
         return $retVal;
     }
 
-    //
-    // INTERNAL TOOLKIT -- {STOP}
-    //
+    protected function bootstrap(): void
+    {
+        $this->Device = Device::init($this);
+    }
+
+    /**
+     * Returns the answers collected from the executed command.
+     *
+     * @return array The answers collected from the executed command.
+     */
+    public function getAnswers(): array
+    {
+        return $this->answers;
+    }
+
+    /**
+     * Returns the answer at the specified index from the collected answers.
+     *
+     * @param int $index The index of the answer to retrieve.
+     * 
+     * @return string|null The answer at the specified index, or null if the index is out of bounds.
+     */
+    public function getAnswerByIndex(int $index): ?string
+    {
+        if (!isset(self::$descriptors)) {
+            throw new \Exception('Descriptors not initialized.');
+        }
+
+        return $this->answers[$index] ?? null;
+    }
+
+    /**
+     * Validates that the current operating system is Linux.
+     *
+     * @return bool `true` if the operating system is Linux and `stty` is available, `false` otherwise.
+     */
+    public function validateOperationSystem(): bool
+    {
+        $system = php_uname();
+
+        if (!preg_match('/linux/', strtolower($system), $output)) {
+            trigger_error("This library is only compatible with linux.", E_USER_WARNING);
+
+            return false;
+        }
+
+        $status = $this->exec('stty --version');
+
+        if ($status !== 0) {
+            trigger_error('No stty available, unable to run.', E_USER_WARNING);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Executes the given command and returns the exit status.
+     *
+     * This method opens a new process using the `proc_open()` function, executes the provided command, 
+     * and returns the exit status of the process. 
+     * The output of the command is stored in the `$answers` property of the class.
+     *
+     * @param string $command The command to execute.
+     * 
+     * @return int The exit status of the executed command.
+     * 
+     * @throws \RuntimeException If the command could not be executed.
+     */
+    public function exec(string $command): int
+    {
+        $process = proc_open($command, self::$descriptors, $pipes);
+
+        if (!is_resource($process)) {
+            throw new \RuntimeException("Could not execute command: {$command}");
+        }
+
+        $answers = [];
+
+        foreach ($pipes as $pipeIndex => $pipe) {
+            $answers[$pipeIndex] = stream_get_contents($pipe);
+
+            fclose($pipe);
+        }
+
+        /**
+         * Closes the process opened by `proc_open()` and returns the exit status of the process.
+         * 
+         * TODO: 
+         * Meg kell majd nézni, hogy direkt ezzel vissza tudok-e térni, 
+         * és előtte nyugodtan kitehetem a választ az instance-be.
+         */
+        $status = proc_close($process);
+
+        /**
+         * Stores the output of the executed command in the `$answers` property.
+         */
+        $this->answers = $answers;
+
+        return $status;
+    }
+
+    
+    public function getProp(string $key, mixed $default = null): mixed
+    {
+        return $this->props[$key] ?? $default;
+    }
 }
