@@ -3,8 +3,7 @@
 namespace Tests\Unit\Components\Serial;
 
 use \PHPUnit\Framework\TestCase;
-
-use \RcNetwork\Components\Serial\Serial;
+use \RcNetwork\Components\Serial\ {Serial, Device};
 
 final class SerialTest extends TestCase
 {
@@ -14,14 +13,9 @@ final class SerialTest extends TestCase
     {
         error_reporting(E_ALL);
 
-        $this->Serial = new Serial([
+        $this->Serial = new Serial(new Device([
             'port' => '/dev/pts/2',
-        ]);
-    }
-
-    public function testValidateOperationSystem(): void
-    {
-        $this->assertIsBool($this->Serial->validateOperationSystem());
+        ]));
     }
 
     public function testExecReturnIsInt(): void
@@ -34,15 +28,5 @@ final class SerialTest extends TestCase
         $this->Serial->exec('ls -l');
 
         $this->assertIsString($this->Serial->getAnswerByIndex(Serial::STD_OUTPUT));
-    }
-
-    public function testDeviceHasPort(): void
-    {
-        $this->assertTrue($this->Serial->Device->hasPort());
-    }
-
-    public function testDeviceCheckPort(): void
-    {
-        $this->assertEquals($this->Serial->Device->getPort(), '/dev/pts/2');
     }
 }

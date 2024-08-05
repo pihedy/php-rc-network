@@ -2,33 +2,20 @@
 
 namespace RcNetwork\Components\Serial;
 
-class Device implements DeviceInterface
+class LinuxDevice extends AbstractDevice
 {
     protected ?string $port = null;
 
-    public static function init(Serial $Serial): self
-    {
-        $Self = new self($Serial);
+    protected int $boudrate = 9600;
 
-        $Self->open();
+    protected bool $opened = false;
 
-        return $Self;
-    }
-
-    public function __construct(protected Serial $Serial)
-    {
-        /* Do Nothing */
-    }
-
-    public function open(): void
+    public function getPort(): string
     {
         if (!$this->hasPort()) {
-            $this->setPort($this->Serial->getProp('port', ''));
+            $this->setPort($this->getProp('port', ''));
         }
-    }
 
-    public function getPort(): ?string
-    {
         return $this->port;
     }
 
@@ -42,11 +29,12 @@ class Device implements DeviceInterface
             $port = sprintf('/dev/ttyS%d', $output[1] - 1);
         }
 
-        if ($this->Serial->exec("stty -F {$port} 2>&1") !== 0) {
-            throw new \Exception("Failed to set device: {$port}");
-        }
-
         $this->port = $port;
+    }
+
+    public function setOpened(bool $opened): void
+    {
+        $this->opened = $opened;
     }
 
     public function hasPort(): bool

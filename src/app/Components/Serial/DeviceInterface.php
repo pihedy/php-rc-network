@@ -8,5 +8,9 @@ interface DeviceInterface
 
     public function setPort(string $port): void;
 
+    public function setOpened(bool $opened): void;
+
+    public function hasPort(): bool;
+
     public function isOpened(): bool;
 }
