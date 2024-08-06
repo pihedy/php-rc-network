@@ -402,8 +402,7 @@ class SerialOld
 
         if ($this->_os === "linux") {
             $ret = $this->_exec(
-                "stty -F " . $this->_device . " " .
-                    (($length == 1) ? "-" : "") . "cstopb",
+                "stty -F " . $this->_device . " " . (($length == 1) ? "-" : "") . "cstopb",
                 $out
             );
         } elseif ($this->_os === "osx") {
