@@ -4,20 +4,20 @@ namespace RcNetwork\Components\Serial;
 
 /**
  * Represents a Linux serial device.
- * 
+ *
  * This class provides methods to set and retrieve various properties of a serial connection,
  * such as the port, baud rate, parity, character size, stop bits, and flow control.
  * It also provides methods to check the state of the serial connection, such as whether it is opened or closed.
- * 
+ *
  * The class extends the `AbstractDevice` class, which likely provides common functionality for serial devices.
- * 
+ *
  * @author Pihe Edmond <pihedy@gmail.com>
  */
 class LinuxDevice extends AbstractDevice
 {
     /**
      * The serial port that the device is connected to.
-     * 
+     *
      * @var null|string
      */
     protected ?string $port = null;
@@ -39,9 +39,9 @@ class LinuxDevice extends AbstractDevice
     /**
      * The character size of the serial connection.
      *
-     * @var int
+     * @var null|string
      */
-    protected int $characterSize = 0;
+    protected ?string $characterSize = null;
 
     /**
      * The stop bits setting for the serial connection.
@@ -64,11 +64,25 @@ class LinuxDevice extends AbstractDevice
      */
     protected bool $opened = false;
 
+    public function buildCommand(string $glue = ' '): string
+    {
+        $command = array_filter([
+            $this->getPort(),
+            $this->getBoudrate(),
+            $this->getParity(),
+            $this->getCharacterSize(),
+            $this->getStopBits(),
+            $this->getFlowControl()
+        ], fn (int|string $value): mixed => $value);
+
+        return sprintf('stty -F %s', implode($glue, $command));
+    }
+
     /**
      * Returns the serial port that the device is connected to.
      *
-     * If the port has not been set, 
-     * it will be retrieved from the application configuration using the 'port' key, 
+     * If the port has not been set,
+     * it will be retrieved from the application configuration using the 'port' key,
      * and set as the default value.
      *
      * @return string The serial port that the device is connected to.
@@ -85,8 +99,8 @@ class LinuxDevice extends AbstractDevice
     /**
      * Returns the baud rate of the serial connection.
      *
-     * If the baud rate has not been set, 
-     * it will be retrieved from the application configuration using the 'boudrate' key, 
+     * If the baud rate has not been set,
+     * it will be retrieved from the application configuration using the 'boudrate' key,
      * and set as the default value.
      *
      * @return int The baud rate of the serial connection.
@@ -103,8 +117,8 @@ class LinuxDevice extends AbstractDevice
     /**
      * Returns the parity setting for the serial connection.
      *
-     * If the parity setting has not been set, 
-     * it will be retrieved from the application configuration using the 'parity' key, 
+     * If the parity setting has not been set,
+     * it will be retrieved from the application configuration using the 'parity' key,
      * and set as the default value.
      *
      * @return string The parity setting for the serial connection.
@@ -121,13 +135,13 @@ class LinuxDevice extends AbstractDevice
     /**
      * Returns the character size of the serial connection.
      *
-     * If the character size has not been set, 
-     * it will be retrieved from the application configuration using the 'character_size' key, 
+     * If the character size has not been set,
+     * it will be retrieved from the application configuration using the 'character_size' key,
      * and set as the default value.
      *
      * @return int The character size of the serial connection.
      */
-    public function getCharacterSize(): int
+    public function getCharacterSize(): string
     {
         if (!$this->hasCharacterSize()) {
             $this->setCharacterSize($this->getProp('character_size', 8));
@@ -139,8 +153,8 @@ class LinuxDevice extends AbstractDevice
     /**
      * Returns the number of stop bits for the serial connection.
      *
-     * If the stop bits setting has not been set, 
-     * it will be retrieved from the application configuration using the 'stop_bits' key, 
+     * If the stop bits setting has not been set,
+     * it will be retrieved from the application configuration using the 'stop_bits' key,
      * and set as the default value.
      *
      * @return string The number of stop bits for the serial connection.
@@ -157,8 +171,8 @@ class LinuxDevice extends AbstractDevice
     /**
      * Returns the flow control setting for the serial connection.
      *
-     * If the flow control setting has not been set, 
-     * it will be retrieved from the application configuration using the 'flow_control' key, 
+     * If the flow control setting has not been set,
+     * it will be retrieved from the application configuration using the 'flow_control' key,
      * and set as the default value.
      *
      * @return string The flow control setting for the serial connection.
@@ -178,7 +192,7 @@ class LinuxDevice extends AbstractDevice
      * If the device is already opened, an exception will be thrown.
      *
      * @param string $port The port for the serial connection.
-     * 
+     *
      * @throws \Exception If the device is already opened.
      */
     public function setPort(string $port): void
@@ -200,7 +214,7 @@ class LinuxDevice extends AbstractDevice
      * If the device is already opened, an exception will be thrown.
      *
      * @param int $boudrate The baud rate for the serial connection.
-     * 
+     *
      * @throws \Exception If the device is already opened or the baud rate is invalid.
      */
     public function setBoudrate(int $boudrate): void
@@ -222,7 +236,7 @@ class LinuxDevice extends AbstractDevice
      * If the device is already opened, an exception will be thrown.
      *
      * @param string $parity The parity for the serial connection. Can be 'none', 'even', or 'odd'.
-     * 
+     *
      * @throws \Exception If the device is already opened or the parity is invalid.
      */
     public function setParity(string $parity): void
@@ -250,7 +264,7 @@ class LinuxDevice extends AbstractDevice
      * If the device is already opened, an exception will be thrown.
      *
      * @param int $size The character size for the serial connection. Must be between 5 and 8.
-     * 
+     *
      * @throws \Exception If the device is already opened or the character size is invalid.
      */
     public function setCharacterSize(int $size): void
@@ -272,7 +286,7 @@ class LinuxDevice extends AbstractDevice
      * If the device is already opened, an exception will be thrown.
      *
      * @param bool $hasStopBits Whether to use one or two stop bits. `true` for two stop bits, `false` for one stop bit.
-     * 
+     *
      * @throws \Exception If the device is already opened.
      */
     public function setStopBits(bool $hasStopBits): void
@@ -307,9 +321,9 @@ class LinuxDevice extends AbstractDevice
 
         $valid = [
             'none'      => '',
-            'rts'       => ' -crtscts',
-            'cts'       => ' -ccts',
-            'rtscts'    => ' -crtscts',
+            'rts'       => '-crtscts',
+            'cts'       => '-ccts',
+            'rtscts'    => '-crtscts',
         ];
 
         if (!isset($valid[$flowControl])) {
@@ -370,7 +384,7 @@ class LinuxDevice extends AbstractDevice
      */
     public function hasCharacterSize(): bool
     {
-        return $this->characterSize !== 0;
+        return $this->characterSize !== null;
     }
 
     /**
@@ -400,7 +414,7 @@ class LinuxDevice extends AbstractDevice
      */
     public function isOpened(): bool
     {
-        return false;
+        return $this->opened;
     }
 }
 

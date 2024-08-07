@@ -1,7 +1,17 @@
-<phpunit bootstrap="src/vendor/autoload.php" colors="true">
+<phpunit
+    bootstrap="src/vendor/autoload.php"
+    colors="true"
+    stopOnError="false"
+    stopOnFailure="false"
+    cacheDirectory=".phpunit.cache"
+    backupStaticProperties="false"
+>
     <testsuites>
         <testsuite name="RC Network Test Suite">
             <directory>./tests</directory>
         </testsuite>
     </testsuites>
+    <php>
+        <ini name="date.timezone" value="UTC" />
+    </php>
 </phpunit>

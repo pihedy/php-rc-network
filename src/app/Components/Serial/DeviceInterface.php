@@ -13,4 +13,6 @@ interface DeviceInterface
     public function hasPort(): bool;
 
     public function isOpened(): bool;
+
+    public function buildCommand(string $glue): string;
 }
