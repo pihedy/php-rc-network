@@ -1,1 +1,1 @@
-# rc-network-php-client
+# PHP RC Network
