@@ -267,6 +267,10 @@ class Serial implements SerialInterface
             throw new \RuntimeException('Device is already closed.');
         }
 
+        if (is_resource(($this->stream))) {
+            fclose($this->stream);
+        }
+
         $this->Device->setOpened(false);
     }
 
