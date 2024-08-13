@@ -73,9 +73,9 @@ class LinuxDeviceTest extends TestCase
      */
     public function testSetBoudrateWithValidRate(): void
     {
-        $this->Device->setBoudrate(9600);
+        $this->Device->setBaudrate(9600);
 
-        $this->assertEquals(9600, $this->Device->getBoudrate());
+        $this->assertEquals(9600, $this->Device->getBaudrate());
     }
 
     /**
@@ -84,12 +84,12 @@ class LinuxDeviceTest extends TestCase
      * This test ensures that when an invalid boudrate is set,
      * an exception is thrown.
      */
-    public function testSetBoudrateWithInvalidRate(): void
+    public function testSetBaudrateWithInvalidRate(): void
     {
         $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Invalid boudrate.');
+        $this->expectExceptionMessage('Invalid baudrate.');
 
-        $this->Device->setBoudrate(1234);
+        $this->Device->setBaudrate(1234);
     }
 
     /**
@@ -228,9 +228,9 @@ class LinuxDeviceTest extends TestCase
         $this->Device->setPort('/dev/ttyUSB0');
         $this->assertTrue($this->Device->hasPort());
 
-        $this->assertFalse($this->Device->hasBoudrate());
-        $this->Device->setBoudrate(9600);
-        $this->assertTrue($this->Device->hasBoudrate());
+        $this->assertFalse($this->Device->hasBaudrate());
+        $this->Device->setBaudrate(9600);
+        $this->assertTrue($this->Device->hasBaudrate());
 
         $this->assertFalse($this->Device->hasParity());
         $this->Device->setParity('none');
@@ -275,8 +275,8 @@ class LinuxDeviceTest extends TestCase
      */
     public function testBuildCommandWithDefaultSettings(): void
     {
-        $expectedCommand = 'stty -F /dev/ttyS0 9600 -parenb cs8 cstopb';
-        $this->assertEquals($expectedCommand, $this->Device->buildCommand());
+        $expectedCommand = 'stty -F /dev/ttyS0 9600 cs8 cstopb -parenb';
+        $this->assertEquals($expectedCommand, $this->Device->getSetupCommand());
     }
 
     /**
@@ -285,14 +285,14 @@ class LinuxDeviceTest extends TestCase
     public function testBuildCommandWithCustomSettings(): void
     {
         $this->Device->setPort('/dev/ttyUSB0');
-        $this->Device->setBoudrate(115200);
+        $this->Device->setBaudrate(115200);
         $this->Device->setParity('even');
         $this->Device->setCharacterSize(7);
         $this->Device->setStopBits(true);
         $this->Device->setFlowControl('rtscts');
 
-        $expectedCommand = 'stty -F /dev/ttyUSB0 115200 parenb -parodd cs7 -cstopb -crtscts';
-        $this->assertEquals($expectedCommand, $this->Device->buildCommand());
+        $expectedCommand = 'stty -F /dev/ttyUSB0 115200 cs7 -cstopb parenb -parodd -crtscts';
+        $this->assertEquals($expectedCommand, $this->Device->getSetupCommand());
     }
 
     /**
@@ -304,8 +304,8 @@ class LinuxDeviceTest extends TestCase
             'port' => '/dev/ttyACM0',
         ]);
 
-        $expectedCommand = 'stty -F /dev/ttyACM0 9600 -parenb cs8 cstopb';
-        $this->assertEquals($expectedCommand, $minimalDevice->buildCommand());
+        $expectedCommand = 'stty -F /dev/ttyACM0 9600 cs8 cstopb -parenb';
+        $this->assertEquals($expectedCommand, $minimalDevice->getSetupCommand());
     }
 
     /**
@@ -314,7 +314,7 @@ class LinuxDeviceTest extends TestCase
     public function testBuildCommandWithOddParity(): void
     {
         $this->Device->setParity('odd');
-        $expectedCommand = 'stty -F /dev/ttyS0 9600 parenb parodd cs8 cstopb';
-        $this->assertEquals($expectedCommand, $this->Device->buildCommand());
+        $expectedCommand = 'stty -F /dev/ttyS0 9600 cs8 cstopb parenb parodd';
+        $this->assertEquals($expectedCommand, $this->Device->getSetupCommand());
     }
 }
