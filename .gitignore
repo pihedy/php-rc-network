@@ -1,3 +1,4 @@
 src/vendor/
 .vscode/launch.json
 .phpunit.result.cache
+.phpunit.cache/
