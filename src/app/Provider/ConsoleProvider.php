@@ -11,10 +11,10 @@ use \Symfony\Component\Console\Command\Command;
 
 /**
  * ConsoleProvider implements the ProviderInterface.
- * 
- * This class registers the Symfony Console Application as a service in the dependency injection container. 
+ *
+ * This class registers the Symfony Console Application as a service in the dependency injection container.
  * It sets up the application with the configured name, version, and console commands.
- * 
+ *
  * @author Pihe Edmond <pihedy@gmail.com>
  */
 class ConsoleProvider implements ProviderInterface
@@ -43,7 +43,7 @@ class ConsoleProvider implements ProviderInterface
     /**
      * Initializes the console commands.
      *
-     * Gets the list of command class names from the application config. 
+     * Gets the list of command class names from the application config.
      * Instantiates each command class and adds it to the commands array.
      * Validates that each command is an instance of Symfony\Component\Console\Command\Command.
      *
@@ -54,7 +54,7 @@ class ConsoleProvider implements ProviderInterface
         $commands = RcNetworkApp()->config->get('commands.list');
 
         foreach ($commands as $commandKey => $command) {
-            /** 
+            /**
              * @var Command $Command
              */
             $Command = new $command($commandKey);
