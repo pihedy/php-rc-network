@@ -3,7 +3,7 @@
 return [
     'linux_device' => [
         'port'              => '/dev/ttyS0',
-        'boudrate'          => 9600,
+        'baudrate'          => 9600,
         'parity'            => 'none',
         'character_size'    => 8,
         'stop_bits'         => false,
