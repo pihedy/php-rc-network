@@ -4,10 +4,12 @@ namespace RcNetwork\Components\Serial;
 
 /**
  * Represents a serial communication interface.
- * 
+ *
  * This class provides methods for executing commands on a serial device and retrieving the output.
- * 
+ *
  * @author Pihe Edmond <pihedy@gmail.com>
+ *
+ * @property DeviceInterface $Device The command to be executed on the serial device.
  */
 class Serial implements SerialInterface
 {
@@ -28,7 +30,7 @@ class Serial implements SerialInterface
 
     /**
      * An array of file descriptor specifications for the standard input, output, and error streams.
-     * 
+     *
      * @var array
      */
     protected static array $descriptors = [
@@ -38,10 +40,15 @@ class Serial implements SerialInterface
 
     /**
      * An array to store answers.
-     * 
+     *
      * @var array
      */
     protected array $answers = [];
+
+    /**
+     * Stores the stream resource for the serial communication.
+     */
+    protected mixed $stream = null;
 
     /**
      * Constructs a new instance of the `Serial` class, injecting a `DeviceInterface` implementation.
@@ -67,7 +74,7 @@ class Serial implements SerialInterface
      * Returns the answer at the specified index from the collected answers.
      *
      * @param int $index The index of the answer to retrieve.
-     * 
+     *
      * @return string|null The answer at the specified index, or null if the index is out of bounds.
      */
     public function getAnswerByIndex(int $index): ?string
@@ -80,16 +87,26 @@ class Serial implements SerialInterface
     }
 
     /**
+     * Returns the serial device interface.
+     *
+     * @return DeviceInterface The serial device interface.
+     */
+    public function getDevice(): DeviceInterface
+    {
+        return $this->Device;
+    }
+
+    /**
      * Executes the given command and returns the exit status.
      *
-     * This method opens a new process using the `proc_open()` function, executes the provided command, 
-     * and returns the exit status of the process. 
+     * This method opens a new process using the `proc_open()` function, executes the provided command,
+     * and returns the exit status of the process.
      * The output of the command is stored in the `$answers` property of the class.
      *
      * @param string $command The command to execute.
-     * 
+     *
      * @return int The exit status of the executed command.
-     * 
+     *
      * @throws \RuntimeException If the command could not be executed.
      */
     public function exec(string $command): int
@@ -100,62 +117,146 @@ class Serial implements SerialInterface
             throw new \RuntimeException("Could not execute command: {$command}");
         }
 
-        $answers = [];
+        try {
+            $answers = [];
 
-        foreach ($pipes as $pipeIndex => $pipe) {
-            $answers[$pipeIndex] = stream_get_contents($pipe);
+            foreach ($pipes as $pipeIndex => $pipe) {
+                $answers[$pipeIndex] = stream_get_contents($pipe);
 
-            fclose($pipe);
+                fclose($pipe);
+            }
+
+            /**
+             * Stores the output of the executed command in the `$answers` property.
+             */
+            $this->answers = $answers;
+        } finally {
+            /**
+             * Closes the process opened by `proc_open()` and returns the exit status of the process.
+             */
+            $status = proc_close($process);
         }
-
-        /**
-         * Closes the process opened by `proc_open()` and returns the exit status of the process.
-         * 
-         * TODO: 
-         * Meg kell majd nézni, hogy direkt ezzel vissza tudok-e térni, 
-         * és előtte nyugodtan kitehetem a választ az instance-be.
-         */
-        $status = proc_close($process);
-
-        /**
-         * Stores the output of the executed command in the `$answers` property.
-         */
-        $this->answers = $answers;
 
         return $status;
     }
 
+    /**
+     * Opens the serial device and sets up the connection.
+     *
+     * This method executes the setup command for the serial device,
+     * opens the device port, and sets the stream to non-blocking mode.
+     * If the device is already opened, it throws a `RuntimeException`.
+     *
+     * @return $this The current instance of the `Serial` class.
+     *
+     * @throws \RuntimeException If the device is already opened, the setup command fails, or the device port cannot be opened.
+     */
     public function open(): self
     {
         if ($this->Device->isOpened()) {
             throw new \RuntimeException('Device is already opened.');
         }
 
-        $status = $this->exec("stty -F {$this->Device->getPort()} 2>&1");
+        $status = $this->exec($this->Device->getSetupCommand());
 
         if ($status !== 0) {
             throw new \RuntimeException("Could not open device: {$this->getAnswerByIndex(self::STD_ERROR)}");
         }
+
+        $resource = fopen($this->Device->getPort(), 'r+b');
+
+        if ($resource === false) {
+            throw new \RuntimeException("Could not open device: {$this->getAnswerByIndex(self::STD_ERROR)}");
+        }
+
+        stream_set_blocking($resource, false);
+
+        $this->stream = $resource;
 
         $this->Device->setOpened(true);
 
         return $this;
     }
 
-    public function write(): void
+    /**
+     * Writes data to the serial device.
+     *
+     * @param string    $data   The data to write to the serial device.
+     * @param float     $wait   The time in seconds to wait after writing the data.
+     *
+     * @throws \RuntimeException If the device is not opened or an error occurs while writing.
+     */
+    public function write(string $data, float $wait = 0.1): void
     {
-        
+        if (!$this->Device->isOpened()) {
+            throw new \RuntimeException('Device is not opened.');
+        }
+
+        $status = fwrite($this->stream, $data);
+
+        if ($status === false) {
+            throw new \RuntimeException("Could not write to device: {$this->getAnswerByIndex(self::STD_ERROR)}");
+        }
+
+        usleep((int) ($wait * 1000000));
     }
 
-    public function read(): void
+    /**
+     * Reads data from the serial device.
+     *
+     * @param int       $length     The maximum number of bytes to read.
+     * @param float     $timeout    The maximum time in seconds to wait for data to become available.
+     *
+     * @return string The data read from the serial device.
+     *
+     * @throws \RuntimeException If the device is not opened or an error occurs while reading.
+     */
+    public function read(int $length = 128, float $timeout = 1.0): string
     {
-        
+        if (!$this->Device->isOpened()) {
+            throw new \RuntimeException('Device is not opened.');
+        }
+
+        $result = '';
+        $read   = [$this->stream];
+        $write  = null;
+        $except = null;
+
+        $timeoutSecunds = (int) floor($timeout);
+        $timeoutMicros  = (int) (($timeout - $timeoutSecunds) * 1000000);
+
+        while (strlen($result) < $length) {
+            $ready = stream_select($read, $write, $except, $timeoutSecunds, $timeoutMicros);
+
+            if ($ready === false) {
+                throw new \RuntimeException('Error occurred while waiting for stream to be ready.');
+            }
+
+            if ($ready === 0) {
+                break;
+            }
+
+            $data = fread($this->stream, $length - strlen($result));
+
+            if ($data === false) {
+                throw new \RuntimeException('Error reading from device.');
+            }
+
+            $result .= $data;
+
+            /**
+             * Reset the read stream array.
+             */
+            $read = [$this->stream];
+        }
+
+        return $result;
     }
 
     /**
      * Closes the serial device connection.
      *
-     * This method sets the `$opened` property of the `$Device` object to `false`, 
+     * This method sets the `$opened` property of the `$Device` object to `false`,
      * indicating that the serial device is now closed.
      *
      * @throws \RuntimeException If the device is already closed.
