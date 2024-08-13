@@ -2,6 +2,8 @@
 
 namespace RcNetwork\Components\Serial;
 
+use \RcNetwork\Components\Serial\Exception\DeviceAlreadyOpenedException;
+
 /**
  * Represents a Linux serial device.
  *
@@ -27,7 +29,7 @@ class LinuxDevice extends AbstractDevice
      *
      * @var int
      */
-    protected int $boudrate = 0;
+    protected int $baudrate = 0;
 
     /**
      * The parity setting for the serial connection.
@@ -64,18 +66,29 @@ class LinuxDevice extends AbstractDevice
      */
     protected bool $opened = false;
 
-    public function buildCommand(string $glue = ' '): string
+    protected ?string $setupCommand = null;
+
+    public function buildSetupCommand(string $glue = ' '): void
     {
         $command = array_filter([
             $this->getPort(),
-            $this->getBoudrate(),
-            $this->getParity(),
+            $this->getBaudrate(),
             $this->getCharacterSize(),
             $this->getStopBits(),
+            $this->getParity(),
             $this->getFlowControl()
-        ], fn (int|string $value): mixed => $value);
+        ], fn (int|string $value): mixed => !empty($value));
 
-        return sprintf('stty -F %s', implode($glue, $command));
+        $this->setupCommand = sprintf('stty -F %s', implode($glue, $command));
+    }
+
+    public function getSetupCommand(): string
+    {
+        if ($this->setupCommand === null) {
+            $this->buildSetupCommand();
+        }
+
+        return $this->setupCommand;
     }
 
     /**
@@ -100,18 +113,18 @@ class LinuxDevice extends AbstractDevice
      * Returns the baud rate of the serial connection.
      *
      * If the baud rate has not been set,
-     * it will be retrieved from the application configuration using the 'boudrate' key,
+     * it will be retrieved from the application configuration using the 'baudrate' key,
      * and set as the default value.
      *
      * @return int The baud rate of the serial connection.
      */
-    public function getBoudrate(): int
+    public function getBaudrate(): int
     {
-        if (!$this->hasBoudrate()) {
-            $this->setBoudrate($this->getProp('boudrate', 9600));
+        if (!$this->hasBaudrate()) {
+            $this->setBaudrate($this->getProp('baudrate', 9600));
         }
 
-        return $this->boudrate;
+        return $this->baudrate;
     }
 
     /**
@@ -198,7 +211,7 @@ class LinuxDevice extends AbstractDevice
     public function setPort(string $port): void
     {
         if ($this->isOpened()) {
-            throw new \Exception('Device already opened.');
+            throw new DeviceAlreadyOpenedException('Device already opened.');
         }
 
         if (preg_match("@^COM(\\d+):?$@i", $port, $output)) {
@@ -213,21 +226,21 @@ class LinuxDevice extends AbstractDevice
      *
      * If the device is already opened, an exception will be thrown.
      *
-     * @param int $boudrate The baud rate for the serial connection.
+     * @param int $baudrate The baud rate for the serial connection.
      *
      * @throws \Exception If the device is already opened or the baud rate is invalid.
      */
-    public function setBoudrate(int $boudrate): void
+    public function setBaudrate(int $baudrate): void
     {
         if ($this->isOpened()) {
-            throw new \Exception('Device already opened.');
+            throw new DeviceAlreadyOpenedException('Device already opened.');
         }
 
-        if (!in_array($boudrate, self::BAUD_RATES)) {
-            throw new \Exception('Invalid boudrate.');
+        if (!in_array($baudrate, self::BAUD_RATES)) {
+            throw new \Exception('Invalid baudrate.');
         }
 
-        $this->boudrate = $boudrate;
+        $this->baudrate = $baudrate;
     }
 
     /**
@@ -242,7 +255,7 @@ class LinuxDevice extends AbstractDevice
     public function setParity(string $parity): void
     {
         if ($this->isOpened()) {
-            throw new \Exception('Device already opened.');
+            throw new DeviceAlreadyOpenedException('Device already opened.');
         }
 
         $valid = [
@@ -251,8 +264,10 @@ class LinuxDevice extends AbstractDevice
             'odd'   => 'parenb parodd',
         ];
 
+        $parity = strtolower($parity);
+
         if (!isset($valid[$parity])) {
-            throw new \Exception('Invalid parity.');
+            throw new \InvalidArgumentException('Invalid parity.');
         }
 
         $this->parity = $valid[$parity];
@@ -270,7 +285,7 @@ class LinuxDevice extends AbstractDevice
     public function setCharacterSize(int $size): void
     {
         if ($this->isOpened()) {
-            throw new \Exception('Device already opened.');
+            throw new DeviceAlreadyOpenedException('Device already opened.');
         }
 
         if ($size < 5 || $size > 8) {
@@ -292,7 +307,7 @@ class LinuxDevice extends AbstractDevice
     public function setStopBits(bool $hasStopBits): void
     {
         if ($this->isOpened()) {
-            throw new \Exception('Device already opened.');
+            throw new DeviceAlreadyOpenedException('Device already opened.');
         }
 
         $bits = 'cstopb';
@@ -316,7 +331,7 @@ class LinuxDevice extends AbstractDevice
     public function setFlowControl(string $flowControl): void
     {
         if ($this->isOpened()) {
-            throw new \Exception('Device already opened.');
+            throw new DeviceAlreadyOpenedException('Device already opened.');
         }
 
         $valid = [
@@ -358,13 +373,13 @@ class LinuxDevice extends AbstractDevice
     }
 
     /**
-     * Checks if the serial port boudrate has been set.
+     * Checks if the serial port baudrate has been set.
      *
-     * @return bool True if the boudrate has been set, false otherwise.
+     * @return bool True if the baudrate has been set, false otherwise.
      */
-    public function hasBoudrate(): bool
+    public function hasBaudrate(): bool
     {
-        return $this->boudrate !== 0;
+        return $this->baudrate !== 0;
     }
 
     /**
