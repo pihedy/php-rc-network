@@ -55,7 +55,7 @@ class Serial implements SerialInterface
      *
      * @param DeviceInterface $Device The device interface implementation to use.
      */
-    public function __construct(protected DeviceInterface $Device)
+    public function __construct(public readonly DeviceInterface $Device)
     {
         $this->validateOperationSystem();
     }
@@ -84,16 +84,6 @@ class Serial implements SerialInterface
         }
 
         return $this->answers[$index] ?? null;
-    }
-
-    /**
-     * Returns the serial device interface.
-     *
-     * @return DeviceInterface The serial device interface.
-     */
-    public function getDevice(): DeviceInterface
-    {
-        return $this->Device;
     }
 
     /**
