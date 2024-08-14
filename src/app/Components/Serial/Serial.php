@@ -89,10 +89,6 @@ class Serial implements SerialInterface
     /**
      * Executes the given command and returns the exit status.
      *
-     * This method opens a new process using the `proc_open()` function, executes the provided command,
-     * and returns the exit status of the process.
-     * The output of the command is stored in the `$answers` property of the class.
-     *
      * @param string $command The command to execute.
      *
      * @return int The exit status of the executed command.
@@ -132,10 +128,6 @@ class Serial implements SerialInterface
 
     /**
      * Opens the serial device and sets up the connection.
-     *
-     * This method executes the setup command for the serial device,
-     * opens the device port, and sets the stream to non-blocking mode.
-     * If the device is already opened, it throws a `RuntimeException`.
      *
      * @return $this The current instance of the `Serial` class.
      *
@@ -245,9 +237,6 @@ class Serial implements SerialInterface
 
     /**
      * Closes the serial device connection.
-     *
-     * This method sets the `$opened` property of the `$Device` object to `false`,
-     * indicating that the serial device is now closed.
      *
      * @throws \RuntimeException If the device is already closed.
      */
