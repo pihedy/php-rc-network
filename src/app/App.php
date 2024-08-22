@@ -3,18 +3,17 @@
 namespace RcNetwork;
 
 use \RcNetwork\Interface\ProviderInterface;
-use \Symfony\Component\Console\Application;
 
 /**
  * The App class is a singleton that extends Container and provides application initialization and running logic.
- * 
- * It contains a private static property to hold the singleton instance, 
- * and a public static method getInstance() to retrieve the instance. 
+ *
+ * It contains a private static property to hold the singleton instance,
+ * and a public static method getInstance() to retrieve the instance.
  * The run() method contains the application initialization and running logic.
- * 
+ *
  * @property \RcNetwork\Component\Config\PhpFileConfig  $config     The configuration container.
  * @property \Symfony\Component\Console\Application     $console    The console application.
- * 
+ *
  * @author Pihe Edmond <pihedy@gmail.com>
  */
 final class App extends Container
@@ -36,7 +35,7 @@ final class App extends Container
      * Magic getter to retrieve values from the container.
      *
      * @param string $name The name of the value to retrieve.
-     * 
+     *
      * @return mixed The value if found, null otherwise.
      */
     public function __get(string $name)
