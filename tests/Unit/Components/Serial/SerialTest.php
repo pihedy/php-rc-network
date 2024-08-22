@@ -47,7 +47,7 @@ final class SerialTest extends TestCase
         $result = $this->Serial->open();
 
         $this->assertInstanceOf(Serial::class, $result);
-        $this->assertTrue($this->Serial->getDevice()->isOpened());
+        $this->assertTrue($this->Serial->Device->isOpened());
     }
 
     public function testWriteSuccessfully(): void
