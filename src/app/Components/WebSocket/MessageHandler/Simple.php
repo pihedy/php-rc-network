@@ -54,6 +54,14 @@ class Simple implements MessageComponentInterface
      */
     public function onMessage(ConnectionInterface $From, $message): void
     {
+        foreach ($this->Storage as $Connection) {
+            if ($Connection === $From) {
+                continue;
+            }
+
+            $Connection->send($message);
+        }
+
         $this->Output->writeln("<info>Received message from {$From->resourceId}: {$message}</info>");
     }
 
